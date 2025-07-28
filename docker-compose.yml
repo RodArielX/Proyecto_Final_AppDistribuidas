@@ -1,0 +1,90 @@
+services:
+
+  app1:
+    build: ./app
+    container_name: app1
+    environment:
+      - NODO=app1
+    depends_on:
+      - db
+    networks:
+      - red_app
+
+  app2:
+    build: ./app
+    container_name: app2
+    environment:
+      - NODO=app2
+    depends_on:
+      - db
+    networks:
+      - red_app
+
+  app3:
+    build: ./app
+    container_name: app3
+    environment:
+      - NODO=app3
+    depends_on:
+      - db
+    networks:
+      - red_app
+
+  db:
+    image: mysql:8.0
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    command: --server-id=1 --log-bin=mysql-bin --binlog-do-db=inventario
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - red_app
+
+
+  replica:
+    image: mysql:8.0
+    container_name: replica
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    command: >
+      --server-id=2
+      --log-bin=mysql-bin
+      --read-only=1
+      --replicate-do-db=inventario
+    volumes:
+    - ./replica_data:/var/lib/mysql
+    networks:
+      - red_app
+
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
+    networks:
+      - red_app
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app1
+      - app2
+      - app3
+    networks:
+      - red_app
+
+networks:
+  red_app:
+    driver: bridge
