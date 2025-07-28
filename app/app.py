@@ -58,7 +58,6 @@ def dashboard():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM productos")
     productos = cur.fetchall()
-    print("Productos:", productos)  # debug
     return render_template('dashboard.html', productos=productos, email=session.get('user_email'), nodo=nodo)
 
 @app.route('/registrar', methods=['GET', 'POST'])
@@ -87,7 +86,66 @@ def registrar_producto():
 def consultar():
     return redirect(url_for('dashboard'))
 
+# --- NUEVAS RUTAS CRUD COMPLETO ---
+
+@app.route('/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+def editar_producto(id):
+    cur = mysql.connection.cursor()
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        codigo = request.form['codigo']
+        descripcion = request.form['descripcion']
+        unidad = request.form['unidad']
+        categoria = request.form['categoria']
+
+        cur.execute("SELECT * FROM productos WHERE codigo = %s AND id != %s", (codigo, id))
+        if cur.fetchone():
+            flash('Código duplicado, elige otro.')
+            producto = {
+                'id': id,
+                'nombre': nombre,
+                'codigo': codigo,
+                'descripcion': descripcion,
+                'unidad': unidad,
+                'categoria': categoria
+            }
+            return render_template('editar_producto.html', producto=producto, nodo=nodo)
+
+        cur.execute("""
+            UPDATE productos SET nombre=%s, codigo=%s, descripcion=%s, unidad=%s, categoria=%s WHERE id=%s
+        """, (nombre, codigo, descripcion, unidad, categoria, id))
+        mysql.connection.commit()
+        flash('Producto actualizado correctamente')
+        return redirect(url_for('dashboard'))
+    
+    cur.execute("SELECT * FROM productos WHERE id=%s", (id,))
+    producto = cur.fetchone()
+    if producto is None:
+        flash('Producto no encontrado')
+        return redirect(url_for('dashboard'))
+
+    producto_dict = {
+        'id': producto[0],
+        'nombre': producto[1],
+        'codigo': producto[2],
+        'descripcion': producto[3],
+        'unidad': producto[4],
+        'categoria': producto[5]
+    }
+
+    return render_template('editar_producto.html', producto=producto_dict, nodo=nodo)
+
+
+@app.route('/eliminar/<int:id>', methods=['POST'])
+@login_required
+def eliminar_producto(id):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM productos WHERE id=%s", (id,))
+    mysql.connection.commit()
+    flash('Producto eliminado correctamente')
+    return redirect(url_for('dashboard'))
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-

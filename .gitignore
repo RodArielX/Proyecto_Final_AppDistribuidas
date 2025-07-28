@@ -1,0 +1,6 @@
+# Ignorar archivos temporales de MySQL y datos persistentes
+*.sock
+*.pid
+*.err
+master_data/
+replica_data/

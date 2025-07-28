@@ -9,6 +9,8 @@ services:
       - db
     networks:
       - red_app
+    volumes:
+    - ./app:/app
 
   app2:
     build: ./app
@@ -19,6 +21,8 @@ services:
       - db
     networks:
       - red_app
+    volumes:
+    - ./app:/app
 
   app3:
     build: ./app
@@ -29,6 +33,8 @@ services:
       - db
     networks:
       - red_app
+    volumes:
+    - ./app:/app
 
   db:
     image: mysql:8.0
@@ -39,6 +45,7 @@ services:
     command: --server-id=1 --log-bin=mysql-bin --binlog-do-db=inventario
     volumes:
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql
     networks:
       - red_app
 
@@ -88,3 +95,6 @@ services:
 networks:
   red_app:
     driver: bridge
+
+volumes:
+  db_data:
